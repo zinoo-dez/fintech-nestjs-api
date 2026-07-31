@@ -17,6 +17,7 @@ const redis_module_1 = require("./modules/redis/redis.module");
 const queues_module_1 = require("./modules/queues/queues.module");
 const events_module_1 = require("./modules/events/events.module");
 const seats_module_1 = require("./modules/seats/seats.module");
+const bookings_module_1 = require("./modules/bookings/bookings.module");
 const seed_service_1 = require("./database/seed.service");
 const event_entity_1 = require("./modules/events/entities/event.entity");
 const seat_entity_1 = require("./modules/seats/entities/seat.entity");
@@ -36,6 +37,7 @@ exports.AppModule = AppModule = __decorate([
             typeorm_1.TypeOrmModule.forFeature([event_entity_1.Event, seat_entity_1.Seat, user_entity_1.User]),
             events_module_1.EventsModule,
             seats_module_1.SeatsModule,
+            bookings_module_1.BookingsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService, seed_service_1.SeedService],
