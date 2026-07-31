@@ -38,14 +38,20 @@ export class SeedService implements OnApplicationBootstrap {
 
     this.logger.log('🌱 Seeding 20 sample events and seats...');
 
-    // 1. Create Sample User
-    const passwordHash = await bcrypt.hash('password123', 10);
-    const user = this.userRepository.create({
-      email: 'test@gmail.com',
-      passwordHash,
-      name: 'Test Student',
-    });
-    await this.userRepository.save(user);
+    // 1. Create 5 Sample Dummy Users
+    const userCount = await this.userRepository.count();
+    if (userCount === 0) {
+      const passwordHash = await bcrypt.hash('password123', 10);
+      const dummyUsers = [
+        { email: 'user1@gmail.com', name: 'User One', passwordHash },
+        { email: 'user2@gmail.com', name: 'User Two', passwordHash },
+        { email: 'user3@gmail.com', name: 'User Three', passwordHash },
+        { email: 'user4@gmail.com', name: 'User Four', passwordHash },
+        { email: 'user5@gmail.com', name: 'User Five', passwordHash },
+      ];
+      await this.userRepository.save(this.userRepository.create(dummyUsers));
+      this.logger.log('👤 Created 5 sample dummy users (user1@gmail.com to user5@gmail.com).');
+    }
 
     // 2. Sample Event Titles
     const eventTitles = [

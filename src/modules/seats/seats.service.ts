@@ -3,14 +3,16 @@ import {
   NotFoundException,
   ConflictException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import Redis from 'ioredis';
 import { Seat, SeatStatus } from './entities/seat.entity';
 import { Booking, BookingStatus } from '../bookings/entities/booking.entity';
-import { RedisLockService } from '../redis/redis-lock.service';
+import { RedisLockService, REDIS_CLIENT } from '../redis/redis-lock.service';
 import { SEAT_EXPIRATION_QUEUE, SeatExpirationJobData } from '../queues/seat-expiration.processor';
 
 @Injectable()
@@ -23,15 +25,36 @@ export class SeatsService {
     @InjectRepository(Booking)
     private readonly bookingRepository: Repository<Booking>,
     private readonly redisLockService: RedisLockService,
+    @Inject(REDIS_CLIENT)
+    private readonly redisClient: Redis,
     @InjectQueue(SEAT_EXPIRATION_QUEUE)
     private readonly expirationQueue: Queue<SeatExpirationJobData>,
   ) {}
 
+  /**
+   * Redis Cache-Aside Pattern for Seat Layout Query
+   */
   async findByEvent(eventId: string): Promise<Seat[]> {
-    return this.seatRepository.find({
+    const cacheKey = `cache:event:${eventId}:seats`;
+
+    // 1. Check Redis Cache
+    const cached = await this.redisClient.get(cacheKey);
+    if (cached) {
+      this.logger.debug(`⚡ Redis Cache HIT: Event seats layout (${eventId})`);
+      return JSON.parse(cached);
+    }
+
+    // 2. Query PostgreSQL Database on Cache Miss
+    const seats = await this.seatRepository.find({
       where: { eventId },
       order: { seatNumber: 'ASC' },
     });
+
+    // 3. Cache result in Redis for 10 seconds
+    await this.redisClient.set(cacheKey, JSON.stringify(seats), 'EX', 10);
+    this.logger.debug(`🐢 Redis Cache MISS: Loaded from PostgreSQL and cached (${eventId})`);
+
+    return seats;
   }
 
   async findOne(id: string): Promise<Seat> {
@@ -42,14 +65,14 @@ export class SeatsService {
     return seat;
   }
 
+  private async invalidateCache(eventId: string): Promise<void> {
+    const cacheKey = `cache:event:${eventId}:seats`;
+    await this.redisClient.del(cacheKey);
+    this.logger.debug(`🧹 Cleared Redis Cache for Event seats: ${eventId}`);
+  }
+
   /**
    * Concurrency-Safe Seat Reservation (5-Minute Hold)
-   * 1. Acquires Redis Distributed Atomic Lock on seat ID.
-   * 2. Verifies seat availability in PostgreSQL.
-   * 3. Updates seat status to `HELD` with 5-min expiration timestamp.
-   * 4. Creates a `PENDING` booking.
-   * 5. Enqueues a BullMQ 5-Minute Delayed Expiration Job.
-   * 6. Releases Redis Lock cleanly.
    */
   async holdSeat(seatId: string, userId: string): Promise<{ seat: Seat; booking: Booking }> {
     const lockKey = `lock:seat:${seatId}`;
@@ -104,6 +127,9 @@ export class SeatsService {
         { seatId: seat.id, bookingId: savedBooking.id },
         { delay: delayMs },
       );
+
+      // Invalidate Redis Seat Layout Cache
+      await this.invalidateCache(seat.eventId);
 
       this.logger.log(
         `🎉 Seat ${seat.seatNumber} successfully HELD for user ${userId}. Delayed BullMQ job enqueued for ${holdDurationMinutes} mins.`,
