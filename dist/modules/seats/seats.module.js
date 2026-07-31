@@ -10,13 +10,16 @@ exports.SeatsModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const seat_entity_1 = require("./entities/seat.entity");
+const booking_entity_1 = require("../bookings/entities/booking.entity");
 const seats_service_1 = require("./seats.service");
+const seats_controller_1 = require("./seats.controller");
 let SeatsModule = class SeatsModule {
 };
 exports.SeatsModule = SeatsModule;
 exports.SeatsModule = SeatsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([seat_entity_1.Seat])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([seat_entity_1.Seat, booking_entity_1.Booking])],
+        controllers: [seats_controller_1.SeatsController],
         providers: [seats_service_1.SeatsService],
         exports: [seats_service_1.SeatsService, typeorm_1.TypeOrmModule],
     })

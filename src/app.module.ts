@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
+import { RedisModule } from './modules/redis/redis.module';
 import { EventsModule } from './modules/events/events.module';
 import { SeatsModule } from './modules/seats/seats.module';
 import { SeedService } from './database/seed.service';
@@ -17,6 +18,7 @@ import { User } from './modules/users/entities/user.entity';
       isGlobal: true,
     }),
     DatabaseModule,
+    RedisModule,
     TypeOrmModule.forFeature([Event, Seat, User]),
     EventsModule,
     SeatsModule,

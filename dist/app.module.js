@@ -13,6 +13,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const database_module_1 = require("./database/database.module");
+const redis_module_1 = require("./modules/redis/redis.module");
 const events_module_1 = require("./modules/events/events.module");
 const seats_module_1 = require("./modules/seats/seats.module");
 const seed_service_1 = require("./database/seed.service");
@@ -29,6 +30,7 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
             }),
             database_module_1.DatabaseModule,
+            redis_module_1.RedisModule,
             typeorm_1.TypeOrmModule.forFeature([event_entity_1.Event, seat_entity_1.Seat, user_entity_1.User]),
             events_module_1.EventsModule,
             seats_module_1.SeatsModule,
