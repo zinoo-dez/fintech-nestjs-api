@@ -1,0 +1,10 @@
+import { Booking } from '../../bookings/entities/booking.entity';
+export declare class User {
+    id: string;
+    email: string;
+    passwordHash: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    bookings: Booking[];
+}

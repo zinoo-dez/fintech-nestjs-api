@@ -1,10 +1,27 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { DatabaseModule } from './database/database.module';
+import { EventsModule } from './modules/events/events.module';
+import { SeatsModule } from './modules/seats/seats.module';
+import { SeedService } from './database/seed.service';
+import { Event } from './modules/events/entities/event.entity';
+import { Seat } from './modules/seats/entities/seat.entity';
+import { User } from './modules/users/entities/user.entity';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    DatabaseModule,
+    TypeOrmModule.forFeature([Event, Seat, User]),
+    EventsModule,
+    SeatsModule,
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SeedService],
 })
 export class AppModule {}

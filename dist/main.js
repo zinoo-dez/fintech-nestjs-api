@@ -14,7 +14,7 @@ async function bootstrap() {
     }));
     const port = process.env.PORT ?? 3000;
     await app.listen(port);
-    logger.log(`🚀 Application running on: http://localhost:${port}/api/v1`);
+    logger.log(`Api running on: http://localhost:${port}/api/v1`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map
