@@ -17,18 +17,23 @@ exports.SeatsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
+const bullmq_1 = require("@nestjs/bullmq");
+const bullmq_2 = require("bullmq");
 const seat_entity_1 = require("./entities/seat.entity");
 const booking_entity_1 = require("../bookings/entities/booking.entity");
 const redis_lock_service_1 = require("../redis/redis-lock.service");
+const seat_expiration_processor_1 = require("../queues/seat-expiration.processor");
 let SeatsService = SeatsService_1 = class SeatsService {
     seatRepository;
     bookingRepository;
     redisLockService;
+    expirationQueue;
     logger = new common_1.Logger(SeatsService_1.name);
-    constructor(seatRepository, bookingRepository, redisLockService) {
+    constructor(seatRepository, bookingRepository, redisLockService, expirationQueue) {
         this.seatRepository = seatRepository;
         this.bookingRepository = bookingRepository;
         this.redisLockService = redisLockService;
+        this.expirationQueue = expirationQueue;
     }
     async findByEvent(eventId) {
         return this.seatRepository.find({
@@ -71,7 +76,9 @@ let SeatsService = SeatsService_1 = class SeatsService {
                 expiresAt: heldUntil,
             });
             const savedBooking = await this.bookingRepository.save(booking);
-            this.logger.log(`🎉 Seat ${seat.seatNumber} successfully HELD for user ${userId} until ${heldUntil.toISOString()}`);
+            const delayMs = holdDurationMinutes * 60 * 1000;
+            await this.expirationQueue.add('expire-seat', { seatId: seat.id, bookingId: savedBooking.id }, { delay: delayMs });
+            this.logger.log(`🎉 Seat ${seat.seatNumber} successfully HELD for user ${userId}. Delayed BullMQ job enqueued for ${holdDurationMinutes} mins.`);
             return { seat: updatedSeat, booking: savedBooking };
         }
         finally {
@@ -84,8 +91,10 @@ exports.SeatsService = SeatsService = SeatsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(seat_entity_1.Seat)),
     __param(1, (0, typeorm_1.InjectRepository)(booking_entity_1.Booking)),
+    __param(3, (0, bullmq_1.InjectQueue)(seat_expiration_processor_1.SEAT_EXPIRATION_QUEUE)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        redis_lock_service_1.RedisLockService])
+        redis_lock_service_1.RedisLockService,
+        bullmq_2.Queue])
 ], SeatsService);
 //# sourceMappingURL=seats.service.js.map

@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { QueuesModule } from './modules/queues/queues.module';
 import { EventsModule } from './modules/events/events.module';
 import { SeatsModule } from './modules/seats/seats.module';
 import { SeedService } from './database/seed.service';
@@ -19,6 +20,7 @@ import { User } from './modules/users/entities/user.entity';
     }),
     DatabaseModule,
     RedisModule,
+    QueuesModule,
     TypeOrmModule.forFeature([Event, Seat, User]),
     EventsModule,
     SeatsModule,

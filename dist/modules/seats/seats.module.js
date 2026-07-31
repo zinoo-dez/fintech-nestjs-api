@@ -9,16 +9,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SeatsModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
+const bullmq_1 = require("@nestjs/bullmq");
 const seat_entity_1 = require("./entities/seat.entity");
 const booking_entity_1 = require("../bookings/entities/booking.entity");
 const seats_service_1 = require("./seats.service");
 const seats_controller_1 = require("./seats.controller");
+const seat_expiration_processor_1 = require("../queues/seat-expiration.processor");
 let SeatsModule = class SeatsModule {
 };
 exports.SeatsModule = SeatsModule;
 exports.SeatsModule = SeatsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([seat_entity_1.Seat, booking_entity_1.Booking])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([seat_entity_1.Seat, booking_entity_1.Booking]),
+            bullmq_1.BullModule.registerQueue({
+                name: seat_expiration_processor_1.SEAT_EXPIRATION_QUEUE,
+            }),
+        ],
         controllers: [seats_controller_1.SeatsController],
         providers: [seats_service_1.SeatsService],
         exports: [seats_service_1.SeatsService, typeorm_1.TypeOrmModule],

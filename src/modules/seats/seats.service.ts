@@ -6,9 +6,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { Seat, SeatStatus } from './entities/seat.entity';
 import { Booking, BookingStatus } from '../bookings/entities/booking.entity';
 import { RedisLockService } from '../redis/redis-lock.service';
+import { SEAT_EXPIRATION_QUEUE, SeatExpirationJobData } from '../queues/seat-expiration.processor';
 
 @Injectable()
 export class SeatsService {
@@ -20,6 +23,8 @@ export class SeatsService {
     @InjectRepository(Booking)
     private readonly bookingRepository: Repository<Booking>,
     private readonly redisLockService: RedisLockService,
+    @InjectQueue(SEAT_EXPIRATION_QUEUE)
+    private readonly expirationQueue: Queue<SeatExpirationJobData>,
   ) {}
 
   async findByEvent(eventId: string): Promise<Seat[]> {
@@ -43,7 +48,8 @@ export class SeatsService {
    * 2. Verifies seat availability in PostgreSQL.
    * 3. Updates seat status to `HELD` with 5-min expiration timestamp.
    * 4. Creates a `PENDING` booking.
-   * 5. Releases Redis Lock cleanly.
+   * 5. Enqueues a BullMQ 5-Minute Delayed Expiration Job.
+   * 6. Releases Redis Lock cleanly.
    */
   async holdSeat(seatId: string, userId: string): Promise<{ seat: Seat; booking: Booking }> {
     const lockKey = `lock:seat:${seatId}`;
@@ -91,13 +97,21 @@ export class SeatsService {
 
       const savedBooking = await this.bookingRepository.save(booking);
 
+      // 5. Enqueue BullMQ Delayed Expiration Job (5 mins / 300,000 ms)
+      const delayMs = holdDurationMinutes * 60 * 1000;
+      await this.expirationQueue.add(
+        'expire-seat',
+        { seatId: seat.id, bookingId: savedBooking.id },
+        { delay: delayMs },
+      );
+
       this.logger.log(
-        `🎉 Seat ${seat.seatNumber} successfully HELD for user ${userId} until ${heldUntil.toISOString()}`,
+        `🎉 Seat ${seat.seatNumber} successfully HELD for user ${userId}. Delayed BullMQ job enqueued for ${holdDurationMinutes} mins.`,
       );
 
       return { seat: updatedSeat, booking: savedBooking };
     } finally {
-      // 5. Always release Redis Distributed Lock
+      // 6. Always release Redis Distributed Lock
       await this.redisLockService.releaseLock(lockKey, lockToken);
     }
   }
