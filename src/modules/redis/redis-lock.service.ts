@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 export const REDIS_CLIENT = 'REDIS_CLIENT';
 
@@ -11,7 +11,7 @@ export class RedisLockService {
   constructor(
     @Inject(REDIS_CLIENT)
     private readonly redisClient: Redis,
-  ) {}
+  ) { }
 
   /**
    * Acquire atomic distributed lock for a key.
@@ -23,8 +23,8 @@ export class RedisLockService {
     lockKey: string,
     ttlMs: number = 5000,
   ): Promise<string | null> {
-    const lockToken = uuidv4();
-    
+    const lockToken = randomUUID();
+
     // SET lockKey lockToken PX ttlMs NX
     // NX: Only set the key if it does not already exist (Atomic)
     // PX: Set key expiration in milliseconds
@@ -64,7 +64,7 @@ export class RedisLockService {
       lockKey,
       lockToken,
     );
-    
+
     const isReleased = result === 1;
     if (isReleased) {
       this.logger.debug(`Lock released: ${lockKey}`);

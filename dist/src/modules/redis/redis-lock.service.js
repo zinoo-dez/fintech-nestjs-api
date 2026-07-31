@@ -19,7 +19,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RedisLockService = exports.REDIS_CLIENT = void 0;
 const common_1 = require("@nestjs/common");
 const ioredis_1 = __importDefault(require("ioredis"));
-const uuid_1 = require("uuid");
+const crypto_1 = require("crypto");
 exports.REDIS_CLIENT = 'REDIS_CLIENT';
 let RedisLockService = RedisLockService_1 = class RedisLockService {
     redisClient;
@@ -28,7 +28,7 @@ let RedisLockService = RedisLockService_1 = class RedisLockService {
         this.redisClient = redisClient;
     }
     async acquireLock(lockKey, ttlMs = 5000) {
-        const lockToken = (0, uuid_1.v4)();
+        const lockToken = (0, crypto_1.randomUUID)();
         const result = await this.redisClient.set(lockKey, lockToken, 'PX', ttlMs, 'NX');
         if (result === 'OK') {
             this.logger.debug(`Lock acquired: ${lockKey} (Token: ${lockToken})`);
