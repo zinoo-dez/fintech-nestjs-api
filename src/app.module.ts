@@ -10,6 +10,7 @@ import { EventsModule } from './modules/events/events.module';
 import { SeatsModule } from './modules/seats/seats.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { SeedService } from './database/seed.service';
 import { Event } from './modules/events/entities/event.entity';
 import { Seat } from './modules/seats/entities/seat.entity';
@@ -28,6 +29,7 @@ import { User } from './modules/users/entities/user.entity';
     SeatsModule,
     BookingsModule,
     UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService, SeedService],

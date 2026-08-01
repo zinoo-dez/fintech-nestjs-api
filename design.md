@@ -171,6 +171,7 @@ interface Booking {
 ### Auth Module
 - `POST /api/v1/auth/register` - Create account
 - `POST /api/v1/auth/login` - Authenticate & get JWT + Redis session
+- `GET /api/v1/auth/profile` - Get authenticated user profile (JWT protected)
 
 ### Event Module
 - `GET /api/v1/events` - List active events

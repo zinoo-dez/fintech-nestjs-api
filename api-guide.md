@@ -9,6 +9,9 @@
 
 | Category | Method | Endpoint | Description |
 |---|---|---|---|
+| **Auth** | `POST` | `/api/v1/auth/register` | Register a new user account |
+| **Auth** | `POST` | `/api/v1/auth/login` | Authenticate & receive JWT access token |
+| **Auth** | `GET` | `/api/v1/auth/profile` | Get current user profile (Requires Bearer JWT) |
 | **Users** | `GET` | `/api/v1/users` | List all dummy test users (Get User UUIDs) |
 | **Users** | `POST` | `/api/v1/users` | Create a new user |
 | **Events** | `GET` | `/api/v1/events` | List 20 active events |
@@ -22,6 +25,40 @@
 ---
 
 ## 🧪 Step-by-Step Postman / cURL Testing Guide
+
+### Step 0: User Registration & JWT Login
+
+**Register User (`POST /api/v1/auth/register`)**:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "name": "John Doe",
+    "password": "password123"
+  }'
+```
+
+**Login & Receive JWT (`POST /api/v1/auth/login`)**:
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "john@example.com",
+    "password": "password123"
+  }'
+```
+
+**Get Authenticated Profile (`GET /api/v1/auth/profile`)**:
+
+```bash
+curl -X GET http://localhost:3000/api/v1/auth/profile \
+  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>"
+```
+
+---
 
 ### Step 1: Get Dummy User UUID
 `GET /api/v1/users` ကို ခေါ်ယူပြီး စမ်းသပ်မည့် User ၏ `id` (UUID) ကို ရယူပါ:

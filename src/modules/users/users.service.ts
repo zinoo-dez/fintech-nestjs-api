@@ -48,4 +48,10 @@ export class UsersService {
     delete (saved as any).passwordHash;
     return saved;
   }
+
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email },
+    });
+  }
 }

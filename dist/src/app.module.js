@@ -19,6 +19,7 @@ const events_module_1 = require("./modules/events/events.module");
 const seats_module_1 = require("./modules/seats/seats.module");
 const bookings_module_1 = require("./modules/bookings/bookings.module");
 const users_module_1 = require("./modules/users/users.module");
+const auth_module_1 = require("./modules/auth/auth.module");
 const seed_service_1 = require("./database/seed.service");
 const event_entity_1 = require("./modules/events/entities/event.entity");
 const seat_entity_1 = require("./modules/seats/entities/seat.entity");
@@ -40,6 +41,7 @@ exports.AppModule = AppModule = __decorate([
             seats_module_1.SeatsModule,
             bookings_module_1.BookingsModule,
             users_module_1.UsersModule,
+            auth_module_1.AuthModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService, seed_service_1.SeedService],

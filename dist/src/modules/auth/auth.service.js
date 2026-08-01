@@ -41,62 +41,43 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UsersService = void 0;
+exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
+const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcrypt"));
-const user_entity_1 = require("./entities/user.entity");
-let UsersService = class UsersService {
-    userRepository;
-    constructor(userRepository) {
-        this.userRepository = userRepository;
+const users_service_1 = require("../users/users.service");
+let AuthService = class AuthService {
+    usersService;
+    jwtService;
+    constructor(usersService, jwtService) {
+        this.usersService = usersService;
+        this.jwtService = jwtService;
     }
-    async findAll() {
-        return this.userRepository.find({
-            order: { createdAt: 'ASC' },
-            select: { id: true, email: true, name: true, createdAt: true },
-        });
+    async register(dto) {
+        return this.usersService.createUser(dto.email, dto.name, dto.password);
     }
-    async findOne(id) {
-        const user = await this.userRepository.findOne({
-            where: { id },
-            select: { id: true, email: true, name: true, createdAt: true },
-        });
-        if (!user) {
-            throw new common_1.NotFoundException(`User with ID ${id} not found`);
+    async validateUser(email, pass) {
+        const user = await this.usersService.findByEmailWithPassword(email);
+        if (user && (await bcrypt.compare(pass, user.passwordHash))) {
+            const { passwordHash, ...result } = user;
+            return result;
         }
-        return user;
+        throw new common_1.UnauthorizedException('Invalid email or password');
     }
-    async createUser(email, name, password = 'password123') {
-        const existing = await this.userRepository.findOne({ where: { email } });
-        if (existing) {
-            throw new common_1.ConflictException(`User with email ${email} already exists`);
-        }
-        const passwordHash = await bcrypt.hash(password, 10);
-        const user = this.userRepository.create({
-            email,
-            name,
-            passwordHash,
-        });
-        const saved = await this.userRepository.save(user);
-        delete saved.passwordHash;
-        return saved;
-    }
-    async findByEmailWithPassword(email) {
-        return this.userRepository.findOne({
-            where: { email },
-        });
+    async login(loginDto) {
+        const user = await this.validateUser(loginDto.email, loginDto.password);
+        const payload = { sub: user.id, email: user.email };
+        return {
+            accessToken: this.jwtService.sign(payload),
+            user,
+        };
     }
 };
-exports.UsersService = UsersService;
-exports.UsersService = UsersService = __decorate([
+exports.AuthService = AuthService;
+exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
-], UsersService);
-//# sourceMappingURL=users.service.js.map
+    __metadata("design:paramtypes", [users_service_1.UsersService,
+        jwt_1.JwtService])
+], AuthService);
+//# sourceMappingURL=auth.service.js.map
