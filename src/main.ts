@@ -9,6 +9,9 @@ async function bootstrap() {
   // Set global API prefix
   app.setGlobalPrefix('api/v1');
 
+  // Enable CORS for React.js, Vue, Mobile apps, etc.
+  app.enableCors();
+
   // Enable automatic DTO validation across all endpoints
   app.useGlobalPipes(
     new ValidationPipe({
